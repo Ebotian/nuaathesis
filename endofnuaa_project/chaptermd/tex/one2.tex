@@ -1,0 +1,131 @@
+\documentclass{ctexart}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+
+\geometry{a4paper,margin=2.5cm}
+
+\ctexset{
+  section={numbering=false},
+  subsection={numbering=false}
+}
+
+\begin{document}
+
+\pagestyle{plain}
+\pagenumbering{roman}
+
+\tableofcontents
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{一、通信链路构建（Day1）}
+
+首先整合了串口连接相关的代码模块，实现了从UI选择到后端接收、串口发送、电机运动、反馈信号返回、后端处理再转发至UI的全双工交互链路。经测试，该链路能够稳定传输控制指令与反馈数据，为后续所有功能提供了可靠的通信基础。
+
+\section{二、信号选择面板功能实现（以下是Day2）}
+
+信号选择面板需实现四项功能：舵机型号选择（决定协议）、串口选择、波特率选择、舵机使能状态检测与手动重检。由于当前仅使用单一舵机型号，暂时搁置型号与协议自动切换，重点实现了串口选择与使能检测。
+
+\subsection{串口自动探测与选择}
+
+通过系统API枚举可用串口，在下拉菜单中列出。通常USB串口置于顶部，内部串口（如Linux下的ttyS*）置于下方，未做额外隔离，但后续可根据需要优化显示。该功能复用前日已验证的通信能力，实现简单。
+
+\subsection{舵机使能检测的初步尝试与问题}
+
+使能检测的目标是判断每个轴是否处于受控可动状态。最初设想采用简单的阶跃响应测试：依次向各轴发送小幅正偏移（如+5单位）后归零，通过比较反馈值与指令值是否吻合来判定。然而，实际测试中暴露出若干问题：
+
+\begin{itemize}[leftmargin=2.5em]
+  \item \textbf{前端控制延迟}：前端调用接口后，需经IPC转发至后端worker、串口发送、等待反馈、再经IPC返回，整个过程存在明显延时，导致指令发送阻塞，时序混乱。
+  \item \textbf{电机冲击}：直接发送阶跃信号引起电机剧烈跳转，反馈值大幅波动，稳压电源切换至恒流状态，表明瞬时电流过大，对系统不利。
+  \item \textbf{阈值判定困难}：无论是基于最终值的绝对值比较，还是跟踪过程中的动态响应，均难以可靠区分使能与未使能轴。
+\end{itemize}
+
+\subsection{解决方向：后端逻辑与平滑激励}
+
+鉴于上述问题，决定将使能检测逻辑完全置于后端，前端仅负责触发与结果显示。同时，需设计一种既能有效激发响应又对系统冲击小的激励信号。阶跃信号被排除，转而考虑正弦类平滑信号。为此，首先构建了一个通用的离散信号发生器，作为所有控制信号的生成基础。
+
+\section{三、通用信号发生器设计}
+
+为满足使能检测及其他控制任务的需求，设计了一个分层解耦的信号发生器，包含以下模块：
+
+\begin{itemize}[leftmargin=2.5em]
+  \item \textbf{统一数据模型（\texttt{types.ts}）}：定义了信号状态（空闲、运行、检测等）、状态转移事件、正弦波参数（振幅、频率、初相、偏置）、轨迹约束（最大速度、加速度）等，将控制系统变量显式类型化。
+  \item \textbf{目标信号生成（\texttt{waveforms.ts}）}：提供正弦采样函数\ \texttt{sampleSine}，根据时间参数计算参考位置：
+  \begin{equation}
+    \theta_{\text{ref}}(t) = \theta_0 + A \sin(2\pi f t + \phi)
+  \end{equation}
+  \item \textbf{轨迹整形与约束（\texttt{trajectory.ts}）}：通过\ \texttt{shapeTrajectoryStep} 将参考位置转换为受物理约束的可执行轨迹，采用限速、限加速度算法，避免指令突变。
+  \item \textbf{状态机安全控制（\texttt{state-machine.ts}）}：显式定义有限状态机，确保非法迁移被阻断，提供故障闭锁机制。
+  \item \textbf{离散控制与性能指标（\texttt{controller.ts}）}：实现离散PID控制器（含抗饱和、微分滤波），并提供RMSE、超调量、调节时间等评估指标，便于后续算法调优。
+\end{itemize}
+
+该发生器将参考信号、轨迹约束、控制律分离，可灵活生成各种激励波形，并为使能检测算法提供了平滑的底层支持。
+
+\section{四、舵机使能检测算法设计}
+
+基于信号发生器，设计了如下检测算法，其核心思想是利用编码激励与相关分析，从低扰动响应中辨识各轴状态。
+
+\subsection{基线建模与去偏置}
+
+在激励施加前，采集一段零命令下的反馈数据 $f_i(m)$，估计静态偏置 $b_i$ 与噪声标准差 $\sigma_i$：
+\begin{equation}
+  b_i = \frac{1}{M}\sum_{m=1}^{M} f_i(m), \qquad \sigma_i = \sqrt{\frac{1}{M}\sum_{m=1}^{M}\bigl(f_i(m)-b_i\bigr)^2}
+\end{equation}
+并设 $\sigma_i \leftarrow \max(\sigma_i,1)$ 避免除零。后续分析使用去偏置响应 $y_i(k) = f_i(k) - b_i$，仅关注动态变化。
+
+\subsection{分级小扰动激励}
+
+采用分级幅值 $A_\ell \in \{2^{\circ},4^{\circ},6^{\circ}\}$，再通过比例系数 $\kappa=100\,\text{unit}/^{\circ}$ 映射为离散控制幅值 $U_\ell = \kappa A_\ell$（满足驱动器的整数步进分辨率）。每级使用长度为 $N=16$ 的正交二值编码序列 $c_i(k) \in \{\pm1\}$ 并行激励各轴。为平滑起止，引入 $\sin^2$ 包络：
+\begin{equation}
+  \phi_k = \frac{k+1}{N+1}, \qquad w(k) = \sin^2(\pi \phi_k)
+\end{equation}
+期望激励命令为：
+\begin{equation}
+  u_i^*(k) = c_i(k) U_\ell w(k)
+\end{equation}
+进一步通过限斜率平滑生成实际命令：
+\begin{equation}
+  u_i^{\text{cmd}}(k) = u_i^{\text{cmd}}(k-1) + \operatorname{clip}\bigl(u_i^*(k)-u_i^{\text{cmd}}(k-1),\,-\Delta_{\max},\, \Delta_{\max}\bigr)
+\end{equation}
+其中 $\Delta_{\max}$ 对应 $0.8^{\circ}$ 每步，有效抑制抖动与电流冲击。
+
+\subsection{相关检测统计量}
+
+实时累积以下统计量：
+\begin{align}
+  R_i(K) &= \sum_{k=1}^{K} u_i^{\text{cmd}}(k) y_i(k),\\
+  E_i(K) &= \sum_{k=1}^{K} \bigl[u_i^{\text{cmd}}(k)\bigr]^2,\\
+  \hat g_i(K) &= \frac{R_i(K)}{E_i(K)} \quad (E_i>0),\\
+  Z_i(K) &= \frac{\bigl|R_i(K)\bigr|}{\max\bigl(1,\; \sigma_i \sqrt{\max(1,E_i(K))}\bigr)}.
+\end{align}
+$Z_i$ 衡量响应与激励的相关性是否显著高于噪声水平，$\hat g_i$ 反映响应幅度。
+
+\subsection{早停判决与最终规则}
+
+在采样过程中实时检查早停条件：
+\begin{itemize}[leftmargin=2.5em]
+  \item 强通过：$Z_i \ge Z_{hi}$ 且 $|\hat g_i| \ge g_{th}$，判为 \textbf{ENABLED}；
+  \item 强失败：$K \ge K_{\min}$ 且 $Z_i \le Z_{lo}$，判为 \textbf{DISABLED}$\,$。
+\end{itemize}
+若四轴均提前确定，则当前级立即结束；否则进入下一级幅值。最终对未早停的轴使用常规阈值：
+\begin{equation}
+  s_i =
+  \begin{cases}
+    \text{ENABLED}, & Z_i(K_f) \ge Z_{th} \land |\hat g_i(K_f)| \ge g_{th}, \\
+    \text{DISABLED}, & \text{otherwise}.
+  \end{cases}
+\end{equation}
+
+\subsection{平滑收尾与连续检测保护}
+
+检测结束后，以相同限斜率将命令平滑归零，避免结束瞬态。连续检测模式下，引入最小周期约束与冷却机制（如每20轮暂停2秒），以降低电机热/机械累积风险。
+
+\subsection{连续检测实验结果}
+
+在1000轮连续检测中，轴状态判决始终稳定：平均单轮耗时247.9毫秒，Axis1共1000次判定为ENABLED，而Axis2～Axis4在全部轮次均判定为DISABLED，success/failed 计数分别为1000/0，未观察到误判、振荡或早停异常。该结果表明所构建的编码激励、限斜率执行与相关性判决链路能在长时间运行中保持一致性，满足连续在线自检与轴状态分级的工程要求。
+
+\end{document}
