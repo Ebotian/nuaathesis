@@ -8,9 +8,17 @@
 \geometry{a4paper,margin=2.5cm}
 
 \ctexset{
-  section={numbering=false},
-  subsection={numbering=false}
+  section={
+    numbering=true,
+    number=\chinese{section},
+    aftername=、
+  },
+  subsection={numbering=true}
 }
+
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+
+\setcounter{tocdepth}{2}
 
 \begin{document}
 
@@ -22,11 +30,11 @@
 \clearpage
 \pagenumbering{arabic}
 
-\section{一、通信链路构建（Day1）}
+\section{通信链路构建（Day1）}
 
 首先整合了串口连接相关的代码模块，实现了从UI选择到后端接收、串口发送、电机运动、反馈信号返回、后端处理再转发至UI的全双工交互链路。经测试，该链路能够稳定传输控制指令与反馈数据，为后续所有功能提供了可靠的通信基础。
 
-\section{二、信号选择面板功能实现（以下是Day2）}
+\section{信号选择面板功能实现（以下是Day2）}
 
 信号选择面板需实现四项功能：舵机型号选择（决定协议）、串口选择、波特率选择、舵机使能状态检测与手动重检。由于当前仅使用单一舵机型号，暂时搁置型号与协议自动切换，重点实现了串口选择与使能检测。
 
@@ -48,7 +56,7 @@
 
 鉴于上述问题，决定将使能检测逻辑完全置于后端，前端仅负责触发与结果显示。同时，需设计一种既能有效激发响应又对系统冲击小的激励信号。阶跃信号被排除，转而考虑正弦类平滑信号。为此，首先构建了一个通用的离散信号发生器，作为所有控制信号的生成基础。
 
-\section{三、通用信号发生器设计}
+\section{通用信号发生器设计}
 
 为满足使能检测及其他控制任务的需求，设计了一个分层解耦的信号发生器，包含以下模块：
 
@@ -65,7 +73,7 @@
 
 该发生器将参考信号、轨迹约束、控制律分离，可灵活生成各种激励波形，并为使能检测算法提供了平滑的底层支持。
 
-\section{四、舵机使能检测算法设计}
+\section{舵机使能检测算法设计}
 
 基于信号发生器，设计了如下检测算法，其核心思想是利用编码激励与相关分析，从低扰动响应中辨识各轴状态。
 
