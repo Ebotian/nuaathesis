@@ -1,55 +1,35 @@
 \defaultfontfeatures{}
 
-
-% 设置基本文档信息，\linebreak 前面不要有空格，否则在无需换行的场合，中文之间的空格无法消除
 \nuaaset{
-  thesisid = {1028704 18-S000},   % 论文编号
-  title = {\nuaathesis{} 快速上手\linebreak 示例文档},
-  author = {nuaatug},
-  college = {\TeX{} 学院},
-  advisers = {Donald Knuth\quad 大师, tex.se 大牛们},
-  % applydate = {二〇一八年六月}  % 默认当前日期
-  %
-  % 本科
-  major = {\LaTeX{} 科学与技术},
-  studentid = {131810299},
-  classid = {应用技术},           % 班级的名称
-  industrialadvisers = {Jack Ma}, % 企业导师，若无请删除或注释本行
-  % 硕/博士
-  majorsubject = {\LaTeX},
-  researchfield = {\LaTeX 排版},
-  libraryclassid = {TP371},       % 中图分类号
-  subjectclassid = {080605},      % 学科分类号
+  thesisid = {032150115},
+  title = {舵机测试软件开发},
+  author = {易博天},
+  college = {自动化学院},
+  advisers = {叶永强\quad 教授},
+  major = {探测制导与控制技术},
+  studentid = {032150115},
+  classid = {0322501},
+  libraryclassid = {TP273},
+  subjectclassid = {081100},
 }
 \nuaasetEn{
-  title = {\nuaathesis{} Quick Start\linebreak and Document Snippets},
-  author = {nuaatug},
-  college = {College of \TeX},
-  majorsubject = {\LaTeX{} Typesetting},
-  advisers = {Prof.~Donald Knuth, tex.se users},
-  degreefull = {Master of Art and Engineering},
-  % applydate = {June, 8012}
+  title = {Literature Review on Servo Test Software Development},
+  author = {Yibo Tian},
+  college = {College of Automation Engineering},
+  majorsubject = {Detection, Guidance and Control Technology},
+  advisers = {Prof.~Yongqiang Ye},
+  degreefull = {Bachelor of Engineering},
 }
 
-% 摘要
 \begin{abstract}
-本文介绍如何使用\nuaathesis{} 文档类撰写南京航空航天大学学位论文。
-
-首先介绍如何获取并编译本文档，然后展示论文部件的实例，最后列举部分常用宏包的使用方法。
+本文围绕毕业设计课题“舵机测试软件开发”开展文献综述。面向精密舵机工厂测试这一具体场景，论文重点关注多协议通信、实时数据采集、自动测试组织以及测试结果留档等几类核心需求。在此基础上，本文对执行机构测试平台、工业桌面测试系统架构、RS422/UART 串口可靠通信，以及自动测试与实验设计等方向的代表性研究进行了梳理。综述结果表明，现有工作已经在测试台构建、数据采集与可视化、串口传输机制和局部测试方法等方面积累了较多经验，但面向多型号精密舵机的综合测试软件，仍缺少统一的软件架构和成体系的方法组织。基于这一判断，本文认为后续设计与实现可从分层软件架构、配置化协议解析、预实验驱动的参数生成、测试序列优化以及数据闭环管理等方面展开。上述分析为毕业论文后续研究问题的提出和技术路线的论证提供了文献基础。
 \end{abstract}
-\keywords{学位论文, 模板, \nuaathesis}
+\keywords{舵机测试软件, RS422通信, 多协议通信, 工业测试系统, 自动测试}
 
 \begin{abstractEn}
-This document introduces \nuaathesis, the \LaTeX{} document class for NUAA Thesis.
-
-First, we show how to get the source code and compile this document.
-Then we provide snippets for figures, tables, equations, etc.
-Finally we enforce some usage patterns.
+This review is written for the graduation project entitled Servo Test Software Development. It examines the needs of precision servo testing in factory settings, with particular attention to multi-protocol communication, real-time data acquisition, automated test execution, and traceable result management. To support the project, representative studies are surveyed from four directions: actuator test benches, industrial desktop test software architectures, reliable RS422/UART serial communication, and automated testing with experimental design. The survey shows that prior work has already provided useful experience in bench construction, data acquisition and visualization, serial transmission, and task-specific testing methods. Even so, a unified software framework for testing multiple servo models is still insufficiently addressed. On this basis, the project is better developed around several connected ideas, namely layered software architecture, configurable protocol parsing, pretest-driven parameter generation, test-sequence optimization, and closed-loop data management.
 \end{abstractEn}
-\keywordsEn{NUAA thesis, document class, space is accepted here}
-
-
-% 请按自己的论文排版需求，随意修改以下全局设置
+\keywordsEn{servo test software, RS422 communication, multi-protocol communication, industrial testing system, automated testing}
 
 \usepackage{subfig}
 \usepackage{rotating}
@@ -57,9 +37,7 @@ Finally we enforce some usage patterns.
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.16}
-\pgfplotsset{
-  table/search path={./fig/},
-}
+\pgfplotsset{table/search path={./fig/}}
 \usepackage{ifthen}
 \usepackage{longtable}
 \usepackage{siunitx}
@@ -100,9 +78,6 @@ Finally we enforce some usage patterns.
   stringstyle=\color{green!40!black!100},
   keywordstyle=\bfseries\color{blue!50!black},
   commentstyle=\slshape\color{black!60}}
-
-%\usetikzlibrary{external}
-%\tikzexternalize % activate!
 
 \newcommand\cs[1]{\texttt{\textbackslash#1}}
 \newcommand\pkg[1]{\texttt{#1}\textsuperscript{PKG}}

@@ -1,8 +1,6 @@
 \documentclass[
   lang=cn,
   degree=bachelor,
-  % blindtrail,
-  % openany,oneside
   openany,twoside,
   fontset=fandol
 ]{nuaathesis}
@@ -10,7 +8,7 @@
 \graphicspath{{./fig/},{./logo/},{../logo/}}
 
 \input{global.tex}
-% \includeonly{content/start,}
+\includeonly{chapter/one,chapter/two,}
 
 \begin{document}
 
@@ -18,35 +16,14 @@
 \makedeclare
 \frontmatter
 \makeabstract
-% 如果需要调整目录层级数量的话，取消下一行注释，数字含义: 0=chapter, 1=section, 2=subsection
-% \setcounter{tocdepth}{1}
 \expandafter\nuaatableofcontents
 
 \mainmatter
-
-%正文开始
 \include{chapter/one}
-%示例章节
-\include{content/start}
-\include{content/highlight}
-\include{content/theorem2}
-\include{content/demo}
+\include{chapter/two}
 
-%正文结束
-%开始附录
 \appendix
-% 如果参考文献使用 biber
-\bibliographystyle{bachelorbib}   % 参考文献的样式
-\bibliography{bib/sample}   % 参考文献，即 bib/sample.bib 文件（纯文本）
-% 如果打算手写参考文献
-\include{content/manref}
-
-% 如果需要附录的话，在这里 include
-\include{content/ex_duplicate}
-%\include{content/ex_postscript}
-
-%致谢
-\backmatter
-\include{content/acknowledge}
+\bibliographystyle{bachelorbib}
+\bibliography{bib/sample}
 
 \end{document}
