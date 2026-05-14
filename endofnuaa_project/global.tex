@@ -2,7 +2,7 @@
 
 \nuaaset{
   thesisid = {032150115},
-  title = {舵机测试软件开发},
+  title = {基于分层架构的舵机测试软件设计与实现},
   author = {易博天},
   college = {自动化学院},
   advisers = {叶永强\quad 教授},
@@ -13,8 +13,8 @@
   subjectclassid = {081100},
 }
 \nuaasetEn{
-  title = {Literature Review on Servo Test Software Development},
-  author = {Yibo Tian},
+  title = {Design and Implementation of a Layered Servo Test Software System},
+  author = {Yi Botian},
   college = {College of Automation Engineering},
   majorsubject = {Detection, Guidance and Control Technology},
   advisers = {Prof.~Yongqiang Ye},
@@ -22,14 +22,18 @@
 }
 
 \begin{abstract}
-本文围绕毕业设计课题“舵机测试软件开发”开展文献综述。面向精密舵机工厂测试这一具体场景，论文重点关注多协议通信、实时数据采集、自动测试组织以及测试结果留档等几类核心需求。在此基础上，本文对执行机构测试平台、工业桌面测试系统架构、RS422/UART 串口可靠通信，以及自动测试与实验设计等方向的代表性研究进行了梳理。综述结果表明，现有工作已经在测试台构建、数据采集与可视化、串口传输机制和局部测试方法等方面积累了较多经验，但面向多型号精密舵机的综合测试软件，仍缺少统一的软件架构和成体系的方法组织。基于这一判断，本文认为后续设计与实现可从分层软件架构、配置化协议解析、预实验驱动的参数生成、测试序列优化以及数据闭环管理等方面展开。上述分析为毕业论文后续研究问题的提出和技术路线的论证提供了文献基础。
+本论文面向 Windows 环境下的精密舵机桌面测试任务，围绕 RS422 控制器连接、四路反馈采集、性能指标计算和结果留档设计软件实现。测试现场中，反馈帧以较高频率连续到达，参数填写、图表查看和文件保存的节奏相对较低；二者进入同一界面执行路径时，曲线刷新、状态提示和参数记录容易相互牵制。为处理这一问题，软件采用 Electron、Vue3 和 TypeScript 构建桌面界面与本地调度逻辑，并把界面操作、本地能力访问、任务协调、后台处理、串口通信和测试计算拆分到不同层次。
+
+在该结构下，界面侧只发起受控请求并接收状态事件，通信模块完成两类协议帧的构造、校验、缓存解析和最近反馈样本维护，测试核心在统一运行时接口上执行通信性能测试、控制性能预测试、时域性能测试和频域性能测试。系统输出链路统计、噪声与阶跃参数、位置响应指标、扫频幅相结果和结构化保存文件。实现完成后，本文用自动化测试检查协议解析、测试核心和自动控制逻辑，并在当前联调台架上检查手动收发、高频自动发送和使能检测。检查结果表明，软件已能支撑当前阶段的舵机测试、结果显示和数据留档；24 h 连续运行、完整端到端时延和自动报告生成仍需后续验证。
 \end{abstract}
-\keywords{舵机测试软件, RS422通信, 多协议通信, 工业测试系统, 自动测试}
+\keywords{精密舵机；测试软件；分层架构；RS422通信；性能测试}
 
 \begin{abstractEn}
-This review is written for the graduation project entitled Servo Test Software Development. It examines the needs of precision servo testing in factory settings, with particular attention to multi-protocol communication, real-time data acquisition, automated test execution, and traceable result management. To support the project, representative studies are surveyed from four directions: actuator test benches, industrial desktop test software architectures, reliable RS422/UART serial communication, and automated testing with experimental design. The survey shows that prior work has already provided useful experience in bench construction, data acquisition and visualization, serial transmission, and task-specific testing methods. Even so, a unified software framework for testing multiple servo models is still insufficiently addressed. On this basis, the project is better developed around several connected ideas, namely layered software architecture, configurable protocol parsing, pretest-driven parameter generation, test-sequence optimization, and closed-loop data management.
+This thesis studies a Windows desktop software system for precision servo testing. The system connects to a servo controller through RS422, collects four-channel feedback, computes test indices, and stores test results. During testing, serial feedback frames arrive continuously, while parameter editing, chart inspection, and file operations occur at a lower rate. Placing these operations on one interface path creates interference among refresh timing, state prompts, and parameter records. The implemented software therefore divides the program into user interface, local capability bridge, task coordination, background processing, serial communication, and test-computation layers. Electron, Vue3, and TypeScript are used for the desktop interface and local scheduling logic.
+
+With this structure, the interface sends controlled requests and receives state events. The communication module constructs, verifies, buffers, and parses two protocol frame types, and maintains the latest feedback samples. The test core runs communication performance testing, control performance pretesting, time-domain testing, and frequency-domain testing through a common runtime interface. The software produces link statistics, noise and step-response parameters, position-response indices, swept-sine magnitude and phase results, and structured result files. After implementation, automated tests were used to check protocol parsing, test cores, and automatic control logic. Hardware checks under the current integration condition covered manual transmission, high-frequency automatic transmission, and enable detection. The results indicate that the software can support current-stage servo testing, result display, and data archiving. Continuous 24 h operation, complete end-to-end latency, and automatic report generation still require further verification.
 \end{abstractEn}
-\keywordsEn{servo test software, RS422 communication, multi-protocol communication, industrial testing system, automated testing}
+\keywordsEn{Precision servo; Test software; Layered architecture; RS422 communication; Performance test}
 
 \usepackage{subfig}
 \usepackage{rotating}
@@ -40,11 +44,15 @@ This review is written for the graduation project entitled Servo Test Software D
 \pgfplotsset{table/search path={./fig/}}
 \usepackage{ifthen}
 \usepackage{longtable}
+\usepackage{float}
+\usepackage{placeins}
 \usepackage{siunitx}
 \usepackage{listings}
 \usepackage{multirow}
 \usepackage{pifont}
 \usepackage{collcell}
+
+\raggedbottom
 
 \lstdefinestyle{lstStyleBase}{%
   basicstyle=\small\ttfamily,

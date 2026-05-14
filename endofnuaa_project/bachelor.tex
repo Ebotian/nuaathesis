@@ -8,7 +8,7 @@
 \graphicspath{{./fig/},{./logo/},{../logo/}}
 
 \input{global.tex}
-\includeonly{chapter/one,chapter/two,chapter/three,chapter/four,}
+\includeonly{chapter/one,chapter/two,chapter/three,chapter/four,chapter/five,chapter/six,chapter/seven,content/acknowledge}
 
 \begin{document}
 
@@ -23,9 +23,15 @@
 \include{chapter/two}
 \include{chapter/three}
 \include{chapter/four}
+\include{chapter/five}
+\include{chapter/six}
+\include{chapter/seven}
 
 \appendix
 \bibliographystyle{bachelorbib}
 \bibliography{bib/sample}
+
+\backmatter
+\include{content/acknowledge}
 
 \end{document}
