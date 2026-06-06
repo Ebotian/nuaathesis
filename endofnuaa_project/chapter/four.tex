@@ -27,9 +27,9 @@
   \caption{协议帧结构对比}
   \label{tab:protocol-frame-structure}
   \begingroup
-  \setlength{\tabcolsep}{3pt}
+  \setlength{\tabcolsep}{2pt}
   \footnotesize
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.10\textwidth}>{\raggedright\arraybackslash}p{0.12\textwidth}>{\raggedright\arraybackslash}p{0.10\textwidth}>{\raggedright\arraybackslash}p{0.29\textwidth}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash}p{0.11\textwidth}@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.09\textwidth}>{\raggedright\arraybackslash}p{0.14\textwidth}>{\raggedright\arraybackslash}p{0.10\textwidth}>{\raggedright\arraybackslash}p{0.32\textwidth}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash}p{0.15\textwidth}@{}}
     \toprule
     协议 & 方向 & 帧长 & 字段顺序 & 校验区间 & 控制范围 \\
     \midrule
@@ -64,14 +64,15 @@
   \begin{tikzpicture}[
     >=latex,
     block/.style={draw, align=center, minimum height=0.85cm, text width=2.3cm, font=\small},
+    flowlabel/.style={font=\footnotesize, fill=white, inner sep=1pt},
     arrow/.style={->, thick}
   ]
     \node[block] (rx) at (0, 1.6) {串口接收\\连续字节流};
     \node[block] (buf) at (3.0, 1.6) {环形缓冲区\\追加数据};
     \node[block] (sync) at (6.0, 1.6) {同步字搜索\\定位帧头};
     \node[block] (len) at (9.0, 1.6) {帧长判断\\协议识别};
-    \node[block] (extract) at (12.0, 1.6) {完整帧提取\\移出缓冲区};
-    \node[block] (parse) at (12.0, 0) {字段解析\\控制量与反馈量};
+    \node[block] (extract) at (12.6, 1.6) {完整帧提取\\移出缓冲区};
+    \node[block] (parse) at (12.6, 0) {字段解析\\控制量与反馈量};
     \node[block] (check) at (9.0, 0) {校验验证\\有效性标记};
     \node[block] (event) at (6.0, 0) {事件回传\\结构化样本};
     \node[block] (wait) at (3.0, 0) {等待后续字节\\保留残帧};
@@ -79,11 +80,11 @@
     \draw[arrow] (rx) -- (buf);
     \draw[arrow] (buf) -- (sync);
     \draw[arrow] (sync) -- (len);
-    \draw[arrow] (len) -- node[above, font=\footnotesize]{完整} (extract);
+    \draw[arrow] (len) -- node[above, flowlabel, yshift=8pt]{完整} (extract);
     \draw[arrow] (extract) -- (parse);
     \draw[arrow] (parse) -- (check);
     \draw[arrow] (check) -- (event);
-    \draw[arrow] (len) .. controls (8.4, -0.9) and (4.0, -0.9) .. node[below, font=\footnotesize]{数据不足} (wait);
+    \draw[arrow] (len.south west) .. controls (7.5, -2.3) and (3.0, -2.3) .. node[below, flowlabel]{数据不足} (wait.south);
     \draw[arrow] (wait) -- (buf);
   \end{tikzpicture}}
   \caption{串口收发与帧解析流程示意图}

@@ -1,0 +1,14 @@
+# latexmk configuration for this presentation project
+# Keep this file local to texppt so it does not affect other subprojects.
+
+$pdf_mode = 1;
+$pdflatex = 'xelatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
+
+# Re-run logic and diagnostics
+$max_repeat = 5;
+$silent = 0;
+
+# Keep build artifacts in place for simple sharing.
+# If you prefer a build directory, uncomment below:
+# $out_dir = 'build';
+# $aux_dir = 'build';

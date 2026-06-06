@@ -1,0 +1,37 @@
+# LaTeX intermediate files (keep source and final outputs clean)
+*.aux
+*.bcf
+*.blg
+*.bbl
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.xdv
+*.ilg
+*.ind
+*.idx
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+
+# Temporary and backup files
+*~
+*.tmp
+*.bak
+
+# Keep core deliverables tracked:
+# - *.tex
+# - *.pdf
+# - *.md
+# - latexmkrc

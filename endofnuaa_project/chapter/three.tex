@@ -25,28 +25,29 @@
   \resizebox{\textwidth}{!}{%
   \begin{tikzpicture}[
     >=latex,
-    block/.style={draw, align=center, minimum height=0.85cm, text width=2.45cm, font=\small},
+    block/.style={draw, align=center, minimum height=0.85cm, text width=2.18cm, font=\footnotesize},
+    flowlabel/.style={font=\scriptsize, fill=white, inner sep=1pt},
     arrow/.style={->, thick}
   ]
     \node[block] (ui) at (0, 2.4) {界面层\\操作输入与结果呈现};
     \node[block] (bridge) at (3.4, 2.4) {桥接层\\受控接口边界};
     \node[block] (coord) at (6.8, 2.4) {协调层\\任务调度与事件转发};
-    \node[block] (worker) at (10.2, 3.7) {后台任务层\\异步处理与数据整理};
+    \node[block] (worker) at (10.2, 4.4) {后台任务层\\异步处理与数据整理};
     \node[block] (test) at (10.2, 2.4) {测试核心\\测试流程与指标计算};
-    \node[block] (serial) at (10.2, 1.1) {串口通信层\\连接收发与帧解析};
-    \node[block] (data) at (6.8, 0.2) {结果管理\\保存加载与历史复查};
-    \node[block] (device) at (13.6, 1.1) {舵机控制器\\控制帧与反馈帧};
+    \node[block] (serial) at (10.2, 0.4) {串口通信层\\连接收发与帧解析};
+    \node[block] (data) at (6.8, -0.6) {结果管理\\保存加载与历史复查};
+    \node[block] (device) at (13.6, 0.4) {舵机控制器\\控制帧与反馈帧};
 
-    \draw[arrow] (ui) -- node[above, font=\footnotesize]{操作请求} (bridge);
-    \draw[arrow] (bridge) -- node[above, font=\footnotesize]{业务接口} (coord);
+    \draw[arrow] (ui) -- node[above, flowlabel]{操作请求} (bridge);
+    \draw[arrow] (bridge) -- node[above, flowlabel]{业务接口} (coord);
     \draw[arrow] (coord) -- (worker);
     \draw[arrow] (coord) -- (test);
     \draw[arrow] (coord) -- (serial);
-    \draw[arrow] (serial) -- node[above, font=\footnotesize]{控制帧} (device);
-    \draw[arrow] (device) -- node[below, font=\footnotesize]{反馈帧} (serial);
+    \draw[arrow] (serial) -- node[above, flowlabel]{控制帧} (device);
+    \draw[arrow] (device) -- node[below, flowlabel]{反馈帧} (serial);
     \draw[arrow] (coord) -- (data);
     \draw[arrow] (data) -- (ui);
-    \draw[arrow] (coord) .. controls (6.8, 4.4) and (0, 4.4) .. node[above, font=\footnotesize]{状态、进度与结果事件} (ui);
+    \draw[arrow] (coord) .. controls (6.8, 5.3) and (0, 5.3) .. node[above, flowlabel]{状态、进度与结果事件} (ui);
   \end{tikzpicture}}
   \caption{系统总体架构示意图}
   \label{fig:system-architecture}
@@ -71,24 +72,25 @@
   \resizebox{0.96\textwidth}{!}{%
   \begin{tikzpicture}[
     >=latex,
-    block/.style={draw, align=center, minimum height=0.82cm, text width=2.55cm, font=\small},
+    block/.style={draw, align=center, minimum height=0.82cm, text width=2.25cm, font=\footnotesize},
+    flowlabel/.style={font=\scriptsize, fill=white, inner sep=1pt},
     arrow/.style={->, thick}
   ]
     \node[block] (ui) at (0, 0) {界面操作\\参数与命令};
-    \node[block] (bridge) at (3.2, 0) {桥接接口\\请求封装};
-    \node[block] (coord) at (6.4, 0) {协调处理\\调度与分发};
-    \node[block] (exec) at (9.6, 0.9) {串口与测试任务\\执行请求};
-    \node[block] (worker) at (9.6, -0.9) {后台任务\\异步消息};
-    \node[block] (event) at (6.4, -2.4) {事件整理\\状态、进度、结果};
-    \node[block] (view) at (0, -2.4) {界面更新\\曲线、指标、提示};
+    \node[block] (bridge) at (2.9, 0) {桥接接口\\请求封装};
+    \node[block] (coord) at (5.8, 0) {协调处理\\调度与分发};
+    \node[block] (exec) at (8.8, 1.15) {串口与测试任务\\执行请求};
+    \node[block] (worker) at (8.8, -1.15) {后台任务\\异步消息};
+    \node[block] (event) at (5.8, -3.2) {事件整理\\状态、进度\\与结果};
+    \node[block] (view) at (0, -2.8) {界面更新\\曲线、指标\\与提示};
 
-    \draw[arrow] (ui) -- node[above, font=\footnotesize]{请求响应} (bridge);
+    \draw[arrow] (ui) -- node[above, flowlabel, yshift=10pt]{请求响应} (bridge);
     \draw[arrow] (bridge) -- (coord);
     \draw[arrow] (coord) -- (exec);
     \draw[arrow] (coord) -- (worker);
-    \draw[arrow] (exec) -- (event);
-    \draw[arrow] (worker) -- (event);
-    \draw[arrow] (event) -- node[below, font=\footnotesize]{事件推送} (view);
+    \draw[arrow] (exec.east) -- ++(0.55,0) |- (event.east);
+    \draw[arrow] (worker.south) -- ++(0,-0.55) -| (event.east);
+    \draw[arrow] (event) -- node[below, flowlabel]{事件推送} (view);
     \draw[arrow] (view) -- (ui);
   \end{tikzpicture}}
   \caption{IPC 请求与事件流示意图}
@@ -102,7 +104,9 @@
   \caption{IPC 接口分类及设计作用}
   \label{tab:ipc-classification}
   \small
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.14\textwidth}>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.27\textwidth}@{}}
+  \begingroup
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.18\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}>{\raggedright\arraybackslash}p{0.30\textwidth}>{\raggedright\arraybackslash}p{0.32\textwidth}@{}}
     \toprule
     接口类别 & 主要交互方向 & 承载的操作 & 设计作用 \\
     \midrule
@@ -115,6 +119,7 @@
     数据保存接口 & 界面层到协调层 & 文件选择、结果保存、历史加载 & 将测试结果转化为可追溯数据 \\
     \bottomrule
   \end{tabular}
+  \endgroup
 \end{table}
 
 接口分组承担两项作用。界面组件只面向所属业务能力发起操作，不必了解协调层内部如何组织串口、测试核心和后台任务；测试核心则通过统一事件模型向界面反馈状态。以通信性能测试为例，界面发起联合测试请求后，协调层启动通信测试核心；测试核心在运行过程中产生进度、统计、完成或错误事件；协调层再把这些事件转发到界面层。预测试、时域测试和频域测试采用相近模式，不同测试功能在界面层具有一致的启动、进度、取消和结果展示逻辑。
