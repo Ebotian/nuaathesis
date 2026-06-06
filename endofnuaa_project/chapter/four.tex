@@ -58,36 +58,43 @@
 
 接收流程面向连续字节流。串口接收到的数据先写入环形缓冲区，解析过程从缓冲区中搜索同步字。若找到同步字，系统再读取帧长字段判断协议类型和目标帧长；数据不足一帧时，解析过程暂停并等待后续字节；缓冲区中连续包含多个完整帧时，解析过程按顺序提取。该方法可以同时处理半包和粘包，并减少无效字节对后续解析的影响。串口收发与帧解析流程如图~\ref{fig:serial-frame-flow} 所示。
 
-\begin{figure}[htb]
+\begin{figure}[H]
   \centering
-  \resizebox{\textwidth}{!}{%
+  \resizebox{0.66\textwidth}{!}{%
   \begin{tikzpicture}[
     >=latex,
-    block/.style={draw, align=center, minimum height=0.85cm, text width=2.3cm, font=\small},
-    flowlabel/.style={font=\footnotesize, fill=white, inner sep=1pt},
+    startstop/.style={draw, rounded corners=5pt, align=center, minimum height=0.58cm, text width=2.6cm, font=\footnotesize},
+    process/.style={draw, align=center, minimum height=0.58cm, text width=2.6cm, font=\footnotesize},
+    decision/.style={draw, diamond, aspect=2.0, align=center, inner sep=1pt, text width=2.0cm, font=\footnotesize},
+    flowlabel/.style={font=\scriptsize, fill=white, inner sep=1pt},
     arrow/.style={->, thick}
   ]
-    \node[block] (rx) at (0, 1.6) {串口接收\\连续字节流};
-    \node[block] (buf) at (3.0, 1.6) {环形缓冲区\\追加数据};
-    \node[block] (sync) at (6.0, 1.6) {同步字搜索\\定位帧头};
-    \node[block] (len) at (9.0, 1.6) {帧长判断\\协议识别};
-    \node[block] (extract) at (12.6, 1.6) {完整帧提取\\移出缓冲区};
-    \node[block] (parse) at (12.6, 0) {字段解析\\控制量与反馈量};
-    \node[block] (check) at (9.0, 0) {校验验证\\有效性标记};
-    \node[block] (event) at (6.0, 0) {事件回传\\结构化样本};
-    \node[block] (wait) at (3.0, 0) {等待后续字节\\保留残帧};
+    \node[startstop] (rx) at (0, 0) {串口接收字节流};
+    \node[process] (buf) at (0, -1.0) {追加至环形缓冲区};
+    \node[decision] (sync) at (0, -2.25) {找到同步字?};
+    \node[process] (discard) at (4.3, -2.25) {丢弃无效字节};
+    \node[decision] (complete) at (0, -3.75) {数据完整?};
+    \node[process] (wait) at (4.3, -3.75) {保留残帧\\等待后续字节};
+    \node[process] (extract) at (0, -5.15) {提取完整帧\\移出缓冲区};
+    \node[process] (parse) at (0, -6.15) {字段解析\\生成帧对象};
+    \node[process] (check) at (0, -7.15) {校验验证\\标记状态};
+    \node[startstop] (event) at (0, -8.15) {事件回传\\结构化样本};
 
     \draw[arrow] (rx) -- (buf);
     \draw[arrow] (buf) -- (sync);
-    \draw[arrow] (sync) -- (len);
-    \draw[arrow] (len) -- node[above, flowlabel, yshift=8pt]{完整} (extract);
+    \draw[arrow] (sync) -- node[right, flowlabel]{是} (complete);
+    \draw[arrow] (complete) -- node[right, flowlabel]{是} (extract);
     \draw[arrow] (extract) -- (parse);
     \draw[arrow] (parse) -- (check);
     \draw[arrow] (check) -- (event);
-    \draw[arrow] (len.south west) .. controls (7.5, -2.3) and (3.0, -2.3) .. node[below, flowlabel]{数据不足} (wait.south);
-    \draw[arrow] (wait) -- (buf);
+    \draw[arrow] (sync) -- node[above, flowlabel]{否} (discard);
+    \draw[arrow] (complete) -- node[above, flowlabel]{否} (wait);
+    \draw[thick] (discard.east) -- (5.6, -2.25);
+    \draw[thick] (wait.east) -- (5.6, -3.75);
+    \draw[thick] (5.6, -3.75) -- (5.6, -1.0);
+    \draw[arrow] (5.6, -1.0) -- (buf.east);
   \end{tikzpicture}}
-  \caption{串口收发与帧解析流程示意图}
+  \caption{串口收发与帧解析程序流程图}
   \label{fig:serial-frame-flow}
 \end{figure}
 
@@ -165,31 +172,39 @@
 
 \begin{figure}[htb]
   \centering
-  \resizebox{0.98\textwidth}{!}{%
+  \resizebox{0.58\textwidth}{!}{%
   \begin{tikzpicture}[
     >=latex,
-    block/.style={draw, align=center, minimum height=0.85cm, text width=2.35cm, font=\small},
+    startstop/.style={draw, rounded corners=5pt, align=center, minimum height=0.58cm, text width=2.6cm, font=\footnotesize},
+    process/.style={draw, align=center, minimum height=0.58cm, text width=2.6cm, font=\footnotesize},
+    decision/.style={draw, diamond, aspect=2.0, align=center, inner sep=1pt, text width=2.0cm, font=\footnotesize},
+    flowlabel/.style={font=\scriptsize, fill=white, inner sep=1pt},
     arrow/.style={->, thick}
   ]
-    \node[block] (warm) at (0, 1.8) {预热阶段\\零控制稳定};
-    \node[block] (base) at (3.0, 1.8) {基线采样\\估计偏置与噪声};
-    \node[block] (excite) at (6.0, 1.8) {分级激励\\组合编码输入};
-    \node[block] (stat) at (9.0, 1.8) {相关统计\\计算增益与显著性};
-    \node[block] (early) at (12.0, 1.8) {早停判断\\强通过或强失败};
-    \node[block] (final) at (12.0, 0) {终判规则\\四路状态输出};
-    \node[block] (zero) at (9.0, 0) {回零处理\\限斜率恢复};
-    \node[block] (manual) at (6.0, 0) {恢复手动模式\\清理发送状态};
+    \node[startstop] (start) at (0, 0) {开始检测};
+    \node[process] (warm) at (0, -1.0) {预热阶段\\零控制稳定};
+    \node[process] (base) at (0, -2.0) {基线采样\\估计偏置与噪声};
+    \node[process] (excite) at (0, -3.0) {分级激励\\组合编码输入};
+    \node[process] (stat) at (0, -4.0) {相关统计\\计算增益与显著性};
+    \node[decision] (early) at (0, -5.35) {满足早停?};
+    \node[decision] (enough) at (0, -6.85) {采样结束?};
+    \node[process] (final) at (0, -8.25) {终判规则\\四路状态输出};
+    \node[process] (zero) at (0, -9.25) {回零处理\\限斜率恢复};
+    \node[startstop] (manual) at (0, -10.25) {恢复手动模式\\清理发送状态};
 
+    \draw[arrow] (start) -- (warm);
     \draw[arrow] (warm) -- (base);
     \draw[arrow] (base) -- (excite);
     \draw[arrow] (excite) -- (stat);
     \draw[arrow] (stat) -- (early);
-    \draw[arrow] (early) -- node[right, font=\footnotesize]{满足} (final);
+    \draw[arrow] (early) -- node[right, flowlabel]{否} (enough);
+    \draw[arrow] (early.east) -- node[above, flowlabel]{是} (3.6, -5.35) |- (final.east);
+    \draw[arrow] (enough) -- node[right, flowlabel]{是} (final);
+    \draw[arrow] (enough.west) -- node[above, flowlabel]{否} (-3.6, -6.85) |- (excite.west);
     \draw[arrow] (final) -- (zero);
     \draw[arrow] (zero) -- (manual);
-    \draw[arrow] (early) .. controls (12.2, 3.3) and (6.0, 3.3) .. node[above, font=\footnotesize]{继续采样} (excite);
   \end{tikzpicture}}
-  \caption{舵机使能检测算法流程示意图}
+  \caption{舵机使能检测算法程序流程图}
   \label{fig:enable-detection-flow}
 \end{figure}
 
